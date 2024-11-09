@@ -14,10 +14,13 @@ public:
     static const unsigned n_years = last_year - first_year;
 
 private:
+    // Get day, month and year as array from serial
+    std::array<unsigned, 3> get_dmy(unsigned serial) const;
+
     static std::string padding_dates(unsigned);
 
     // number of days elapsed from beginning of the year
-    unsigned day_of_year() const;
+    unsigned day_of_year(unsigned y, unsigned m, unsigned d) const;
 
     friend long operator-(const Date& d1, const Date& d2);
 
@@ -25,10 +28,21 @@ private:
     static const std::array<unsigned, 12> days_ytd;      // num of days since 1-jan to 1-M in a normal year
     static const std::array<unsigned, n_years> days_epoch;   // num of days since 1-jan-1900 to 1-jan-yyyy (until 2200)
 
+    
 public:
     // Default constructor
-    Date() : m_y(1970), m_m(1), m_d(1), m_is_leap(false) {}
+    Date() : m_serial(0) {}
 
+    Date(unsigned serial)
+    {
+        init(serial);
+    }
+
+    void init(unsigned serial)
+    {
+        check_valid(serial);
+        m_serial = serial;
+    }
     // Constructor where the input value is checked.
     Date(unsigned year, unsigned month, unsigned day)
     {
@@ -38,33 +52,31 @@ public:
     void init(unsigned year, unsigned month, unsigned day)
     {
         check_valid(year, month, day);
-        m_y = (unsigned short) year;
-        m_m = (unsigned char) month;
-        m_d = (unsigned char) day;
-        m_is_leap = is_leap_year(year);
+        m_serial = serial(year, month, day);
     }
 
+    static void check_valid(unsigned serial);
     static void check_valid(unsigned y, unsigned m, unsigned d);
 
     bool operator<(const Date& d) const
     {
-        return (m_y < d.m_y) || (m_y == d.m_y && (m_m < d.m_m || (m_m == d.m_m && m_d < d.m_d)));
+        return m_serial < d.m_serial;
     }
 
     bool operator==(const Date& d) const
     {
-        return (m_y == d.m_y) && (m_m == d.m_m) && (m_d == d.m_d);
+        return m_serial == d.m_serial;
     }
 
     bool operator>(const Date& d) const
     {
-        return d < (*this);
+        return m_serial > d.m_serial;
     }
 
     // number of days since 1-Jan-1900
-    unsigned serial() const
+    unsigned serial(unsigned y, unsigned m, unsigned d) const
     {
-        return days_epoch[m_y - 1900] + day_of_year();
+        return days_epoch[y - 1900] + day_of_year(y, m, d);
     }
 
     static bool is_leap_year(unsigned yr);
@@ -72,16 +84,20 @@ public:
     // In YYYYMMDD format
     std::string to_string(bool pretty = true) const
     {
+        std::array<unsigned, 3> dmy = get_dmy(m_serial);
         return pretty
-            ? std::to_string((int)m_d) + "-" + std::to_string((int)m_m) + "-" + std::to_string(m_y)
-            : std::to_string(m_y) + padding_dates((int)m_m) + padding_dates((int)m_d);
+                   ? std::to_string((int)dmy[0]) + "-" + std::to_string(dmy[1]) + "-" + std::to_string(dmy[2])
+                   : std::to_string(dmy[2]) + padding_dates((int)dmy[1]) + padding_dates((int)dmy[0]);
+    }
+
+    // getter for m_serial
+    unsigned get_m_serial() const
+    {
+        return m_serial;
     }
 
 private:
-    unsigned short m_y;
-    unsigned char m_m;
-    unsigned char m_d;
-    bool m_is_leap;
+    unsigned m_serial;
 };
 
 long operator-(const Date& d1, const Date& d2);

@@ -1,4 +1,6 @@
 #include <iomanip>
+#include <iostream>
+#include <array>
 
 #include "Date.h"
 
@@ -35,6 +37,45 @@ std::string Date::padding_dates(unsigned month_or_day)
     return os.str();
 }
 
+// Get day, month and year as array from serial
+std::array<unsigned, 3> Date::get_dmy(unsigned serial) const
+{
+    std::array<unsigned, 3> dmy;
+
+    // calculate year
+    unsigned y = static_cast<unsigned>(std::upper_bound(days_epoch.begin(), days_epoch.end(), serial) - days_epoch.begin() - 1);
+    dmy[2] = first_year + y;
+
+    serial -= days_epoch[y];
+    bool leap = false;
+    if (is_leap_year(dmy[2]) && serial > 58)
+    {
+        serial--;
+        leap = true;
+    }
+
+    // calculate month
+    unsigned m = static_cast<unsigned>(std::upper_bound(days_ytd.begin(), days_ytd.end(), serial) - days_ytd.begin() - 1);
+    dmy[1] = m + 1;
+
+    // calculate date
+    if (m == 1 && leap)
+    {
+        dmy[0] serial - days_ytd[m] + 2;
+    }
+    else
+    {
+        dmy[0] = serial - days_ytd[m] + 1;
+    }
+
+    return dmy;
+}
+
+void Date::check_valid(unsigned serial)
+{
+    MYASSERT(serial >= 0 && serial <= 109572, "The serial must be a integer between 0 and 109572 (from 1-1-1900 to 31-12-2199), got " << serial);
+}
+
 void Date::check_valid(unsigned y, unsigned m, unsigned d)
 {
     MYASSERT(y >= first_year, "The year must be no earlier than year " << first_year << ", got " << y);
@@ -44,9 +85,9 @@ void Date::check_valid(unsigned y, unsigned m, unsigned d)
     MYASSERT(d >= 1 && d <= dmax, "The day must be a integer between 1 and " << dmax << ", got " << d);
 }
 
-unsigned Date::day_of_year() const
+unsigned Date::day_of_year(unsigned y, unsigned m, unsigned d) const
 {
-    return days_ytd[m_m - 1] + ((m_m > 2 && m_is_leap) ? 1 : 0) + (m_d - 1);
+    return days_ytd[m - 1] + ((m > 2 && is_leap_year(y)) ? 1 : 0) + (d - 1);
 }
 
 
@@ -55,8 +96,8 @@ unsigned Date::day_of_year() const
 */
 long operator-(const Date& d1, const Date& d2)
 {
-    unsigned s1 = d1.serial();
-    unsigned s2 = d2.serial();
+    unsigned s1 = d1.m_serial;
+    unsigned s2 = d2.m_serial;
     return static_cast<long>(s1) - static_cast<long>(s2);
 }
 
