@@ -61,7 +61,7 @@ std::array<unsigned, 3> Date::get_dmy(unsigned serial) const
     // calculate date
     if (m == 1 && leap)
     {
-        dmy[0] serial - days_ytd[m] + 2;
+        dmy[0] = serial - days_ytd[m] + 2;
     }
     else
     {
