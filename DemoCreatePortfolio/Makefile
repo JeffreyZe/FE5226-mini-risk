@@ -27,6 +27,11 @@ ifeq ($(PLATFORM), Linux)
   EXE=.out
   DLL=.so
   LIB=.a
+else ifeq ($(PLATFORM), Darwin)
+  OBJ=.o
+  EXE=
+  DLL=.dylib
+  LIB=.a
 else
 # cygwin or mingw
   OBJ=.obj
