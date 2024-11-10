@@ -1,5 +1,6 @@
 #pragma once
 #include "ICurve.h"
+#include <map>
 
 namespace minirisk {
 
@@ -19,7 +20,7 @@ struct CurveDiscount : ICurveDiscount
 private:
     Date   m_today;
     string m_name;
-    double m_rate;
+    std::map<unsigned, double> m_rate;
 };
 
 } // namespace minirisk

@@ -47,7 +47,15 @@ std::pair<double, bool> MarketDataServer::lookup(const string& name) const
 std::vector<std::string> MarketDataServer::match(const std::string& expr) const
 {
     std::regex r(expr);
-    NOT_IMPLEMENTED;
+    std::vector<std::string> matched_keys;
+    for (const auto& data : m_data)
+    {
+        if(std::regex_match(data.first, r))
+        {
+            matched_keys.push_back(data.first);
+        }
+    }
+    return matched_keys;
 }
 
 } // namespace minirisk
