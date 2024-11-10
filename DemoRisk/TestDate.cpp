@@ -12,7 +12,9 @@ void test1()
     int total_tests = 1000;
     int exception_count = 0;
 
-    srand(static_cast<long>(time(NULL)));
+    unsigned seed = static_cast<unsigned>(time(NULL));
+    srand(seed);
+    std::cout << "Random seed used for Test 1: " << seed << std::endl;
 
     while (count < total_tests)
     {
@@ -49,6 +51,7 @@ void test1()
         throw std::runtime_error("Test 1 failed: Not all invalid dates were caught.");
     }
 }
+
 
 // Verify that converting a date in calendar format (day, month, year) to serial format and then converting back to
 // calendar format yields the original date. Repeat for all dates in the valid range (1-Jan-1900, 31-Dec-2199).
@@ -91,6 +94,7 @@ void test2()
         throw std::runtime_error("Test 2 failed: Calendar and Serial format conversion failed.");
     }
 }
+
 
 // Verify that the serial number generated for 2 contiguous dates are contiguous. For instance 31-Jan-2012 and
 // 1-Feb-2012 are contiguous dates, hence the serial numbers they generate should only diﬀer by 1. Repeat for all
