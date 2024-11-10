@@ -183,10 +183,19 @@ inline my_ifstream& operator>>(my_ifstream& is, Date& v)
 {
     string tmp;
     is >> tmp;
-    unsigned y = std::atoi(tmp.substr(0, 4).c_str());
-    unsigned m = std::atoi(tmp.substr(4, 2).c_str());
-    unsigned d = std::atoi(tmp.substr(6, 2).c_str());
-    v.init(y, m, d);
+
+    if (tmp.size() == 8) // read YYYYMMDD format
+    {
+        unsigned y = std::atoi(tmp.substr(0, 4).c_str());
+        unsigned m = std::atoi(tmp.substr(4, 2).c_str());
+        unsigned d = std::atoi(tmp.substr(6, 2).c_str());
+        v.init(y, m, d);
+    }
+    else // read Serial format
+    {
+        unsigned serial = std::atoi(tmp.c_str());
+        v.init(serial);
+    }
     return is;
 }
 
