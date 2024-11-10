@@ -17,6 +17,7 @@ CurveDiscount::CurveDiscount(Market *mkt, const Date& today, const string& curve
 double  CurveDiscount::df(const Date& t) const
 {
     MYASSERT((!(t < m_today)), "cannot get discount factor for date in the past: " << t);
+    
     double dt = time_frac(m_today, t);
     return std::exp(-m_rate * dt);
 }
