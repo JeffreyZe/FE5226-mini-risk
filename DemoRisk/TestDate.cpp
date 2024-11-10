@@ -92,6 +92,65 @@ void test2()
     }
 }
 
+// Verify that the serial number generated for 2 contiguous dates are contiguous. For instance 31-Jan-2012 and
+// 1-Feb-2012 are contiguous dates, hence the serial numbers they generate should only diﬀer by 1. Repeat for all
+// pairs of contiguous dates in the valid range (1-Jan-1900, 31-Dec-2199).
+void test3()
+{
+    int fail_count = 0;
+    const std::array<unsigned, 12> days_in_month = {{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}};
+
+    for (unsigned y = 1900; y < 2200; ++y)
+    {
+        for (unsigned m = 1; m <= 12; ++m)
+        {
+            unsigned dmax = days_in_month[m - 1] + ((m == 2 && Date::is_leap_year(y)) ? 1 : 0);
+            for (unsigned d = 1; d < dmax; ++d) // loop stops at 30-Dec-2199 to compare it with 31-Dec-2199
+            {
+                Date date_current(y, m, d);
+
+                // determine the next ymd
+                unsigned y_1 = y;
+                unsigned m_1 = m;
+                unsigned d_1 = d + 1;
+
+                if (d > dmax)
+                {
+                    d_1 = 1; // reset day to 1 if day > dmax
+
+                    if (m == 12)
+                    {
+                        m_1 = 1;     // reset month to Jan
+                        y_1 = y + 1; // increment to next year
+                    }
+                    else
+                    {
+                        m_1 = m + 1; // increment to the next month
+                    }
+                }
+                Date date_next(y_1, m_1, d_1);
+
+                if (date_next - date_current != 1)
+                {
+                    fail_count++;
+                    std::cout << "The contiguous test for date " << d << "-" << m << "-" << y
+                              << " and " << d_1 << "-" << m_1 << "-" << y_1 << " is failed. " << std::endl;
+                }
+            }
+        }
+    }
+
+    if (fail_count == 0)
+    {
+        std::cout << "Test 3: SUCCESS" << std::endl;
+    }
+    else
+    {
+        throw std::runtime_error("Test 3 failed: Contiguous test failed.");
+    }
+}
+
+
 int main()
 {
     test1();
