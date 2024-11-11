@@ -21,7 +21,7 @@ double CurveDiscount::df(const Date& t) const
     long max_last_day = static_cast<long>(m_rate_last->first);
     long day_diff = t - m_today;
     MYASSERT((!(day_diff > max_last_day)), "cannot get discount factor for date after last tensor date : " << t);
-    auto df = m_rate.upper_bound(day_diff); // pointing to Ti+1
+    auto df = m_rate.lower_bound(day_diff); // pointing to Ti+1
     unsigned t2 = df->first;
     double rt2 = df->second;
     --df; // pointing to Ti
