@@ -8,6 +8,7 @@ using namespace::minirisk;
 
 void run(const string& portfolio_file, const string& risk_factors_file)
 {
+    std::cout << "Start \n";
     // load the portfolio from file
     portfolio_t portfolio = load_portfolio(portfolio_file);
     // save and reload portfolio to implicitly test round trip serialization
@@ -16,6 +17,7 @@ void run(const string& portfolio_file, const string& risk_factors_file)
     portfolio = load_portfolio("portfolio.tmp");
 
     // display portfolio
+    std::cout << "Print Portfolio: \n";
     print_portfolio(portfolio);
 
     // get pricers
@@ -47,9 +49,17 @@ void run(const string& portfolio_file, const string& risk_factors_file)
         std::cout << "\n";
     }
 
-    {   // Compute PV01 (i.e. sensitivity with respect to interest rate dV/dr)
-        std::vector<std::pair<string, portfolio_values_t>> pv01(compute_pv01(pricers,mkt));  // PV01 per trade
+    // {   // Compute PV01 (i.e. sensitivity with respect to interest rate dV/dr)
+    //     std::vector<std::pair<string, portfolio_values_t>> pv01(compute_pv01(pricers,mkt));  // PV01 per trade
 
+    //     // display PV01 per currency
+    //     for (const auto& g : pv01)
+    //         print_price_vector("PV01 " + g.first, g.second);
+    // }
+
+    {   // Compute PV01 Parallel (i.e. sensitivity with respect to interest rate dV/dr)
+        std::vector<std::pair<string, portfolio_values_t>> pv01(compute_pv01_parallel(pricers,mkt));  // PV01 per trade
+        std::cout << "finish PV01 \n";
         // display PV01 per currency
         for (const auto& g : pv01)
             print_price_vector("PV01 " + g.first, g.second);

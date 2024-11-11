@@ -3,6 +3,7 @@
 #include "TradePayment.h"
 
 #include <numeric>
+#include <set>
 
 namespace minirisk {
 
@@ -19,60 +20,189 @@ std::vector<ppricer_t> get_pricers(const portfolio_t& portfolio)
     return pricers;
 }
 
+// portfolio_values_t compute_prices(const std::vector<ppricer_t>& pricers, Market& mkt)
+// {
+//     portfolio_values_t prices(pricers.size());
+//     std::cout << "portfolio_values_t" << std::endl;
+//     for (size_t i = 0; i < pricers.size(); ++i) 
+//     {
+        
+//         // Call price and create the pair
+//         double price = pricers[i]->price(mkt);
+//         std::cout << "portfolio_values_trtt" << price << std::endl;
+//         prices[i] = std::make_pair(price, "");
+//     }
+
+//     // std::transform(pricers.begin(), pricers.end(), prices.begin()
+//     //     , [&mkt](auto& pp) -> std::pair<double, string>
+//     //      { return std::make_pair(pp->price(mkt), ""); });
+//     std::cout << "portfolio_values_t eee" << std::endl;
+//     return prices;
+// }
 portfolio_values_t compute_prices(const std::vector<ppricer_t>& pricers, Market& mkt)
 {
     portfolio_values_t prices(pricers.size());
+    std::cout << "portfolio_values_t" << std::endl;
+    //pricers[0]->price(mkt);
+    std::cout << "portfolio_values_tttt" << std::endl;
     std::transform(pricers.begin(), pricers.end(), prices.begin()
         , [&mkt](auto &pp) -> double { return pp->price(mkt); });
     return prices;
 }
 
+
+
 double portfolio_total(const portfolio_values_t& values)
 {
     return std::accumulate(values.begin(), values.end(), 0.0);
+    // double sum=0;
+    // for (size_t i=0; i < values.size(); i++)
+    // {
+    //     sum += values[i].first;
+    // }
+    // std::cout << sum << std::endl;
+    // return sum;
 }
 
-std::vector<std::pair<string, portfolio_values_t>> compute_pv01(const std::vector<ppricer_t>& pricers, const Market& mkt)
+// std::vector<std::pair<string, portfolio_values_t>> compute_pv01(const std::vector<ppricer_t>& pricers, const Market& mkt)
+// {
+//     std::vector<std::pair<string, portfolio_values_t>> pv01;  // PV01 per trade
+
+//     const double bump_size = 0.01 / 100;
+
+//     // filter risk factors related to IR
+//     auto base = mkt.get_risk_factors(ir_rate_prefix + "[A-Z]{3}");
+
+//     // Make a local copy of the Market object, because we will modify it applying bumps
+//     // Note that the actual market objects are shared, as they are referred to via pointers
+//     Market tmpmkt(mkt);
+
+//     // compute prices for perturbated markets and aggregate results
+//     pv01.reserve(base.size());
+//     for (const auto& d : base) {
+//         std::vector<double> pv_up, pv_dn;
+//         std::vector<std::pair<string, double>> bumped(1, d);
+//         pv01.push_back(std::make_pair(d.first, std::vector<double>(pricers.size())));
+
+//         // bump down and price
+//         bumped[0].second = d.second - bump_size;
+//         tmpmkt.set_risk_factors(bumped);
+//         pv_dn = compute_prices(pricers, tmpmkt);
+
+//         // bump up and price
+//         bumped[0].second = d.second + bump_size; // bump up
+//         tmpmkt.set_risk_factors(bumped);
+//         pv_up = compute_prices(pricers, tmpmkt);
+
+
+//         // restore original market state for next iteration
+//         // (more efficient than creating a new copy of the market at every iteration)
+//         bumped[0].second = d.second;
+//         tmpmkt.set_risk_factors(bumped);
+
+//         // compute estimator of the derivative via central finite differences
+//         double dr = 2.0 * bump_size;
+//         std::transform(pv_up.begin(), pv_up.end(), pv_dn.begin(), pv01.back().second.begin()
+//             , [dr](double hi, double lo) -> double { return (hi - lo) / dr; });
+//     }
+
+//     return pv01;
+// }
+
+std::vector<std::pair<string, portfolio_values_t>> compute_pv01_parallel(const std::vector<ppricer_t>& pricers, const Market& mkt)
 {
+
+    std::cout << "compute_pv01_parallel \n";
     std::vector<std::pair<string, portfolio_values_t>> pv01;  // PV01 per trade
 
     const double bump_size = 0.01 / 100;
 
     // filter risk factors related to IR
-    auto base = mkt.get_risk_factors(ir_rate_prefix + "[A-Z]{3}");
+    auto base = mkt.get_risk_factors(ir_rate_prefix + "\\d+[DWMY].[A-Z]{3}");
 
     // Make a local copy of the Market object, because we will modify it applying bumps
     // Note that the actual market objects are shared, as they are referred to via pointers
     Market tmpmkt(mkt);
 
-    // compute prices for perturbated markets and aggregate results
-    pv01.reserve(base.size());
-    for (const auto& d : base) {
+    std::set<string> ccy_set;
+    for (const auto& b : base)
+    {
+        if (b.first.length() >= 3)
+        {
+            ccy_set.insert(b.first.substr(b.first.length() - 3));
+        }
+    }
+    std::cout << "ccy_set \n";
+    for (const string& ccy : ccy_set)
+    {
+        std::cout << ccy << std::endl;
+        auto ccy_base = mkt.get_risk_factors(ir_rate_prefix + "\\d+[DWMY]." + ccy);
         std::vector<double> pv_up, pv_dn;
-        std::vector<std::pair<string, double>> bumped(1, d);
-        pv01.push_back(std::make_pair(d.first, std::vector<double>(pricers.size())));
+        std::vector<std::pair<string, double>> bumped;
+        pv01.push_back(std::make_pair("parallel " + ir_rate_prefix + ccy, std::vector<double>(pricers.size())));
 
         // bump down and price
-        bumped[0].second = d.second - bump_size;
+        for (const auto& cb : ccy_base)
+        {
+            std::cout << cb.first << std::endl;
+            bumped.push_back(cb);
+            bumped.back().second = cb.second - bump_size;
+            std::cout << bumped.back().second << std::endl;
+        }
         tmpmkt.set_risk_factors(bumped);
+        std::cout << "pv_dn start" << std::endl;
         pv_dn = compute_prices(pricers, tmpmkt);
+        std::cout << "pv_dn end" << std::endl;
 
         // bump up and price
-        bumped[0].second = d.second + bump_size; // bump up
+        for (size_t i = 0; i < ccy_base.size(); ++i) {
+            std::cout << ccy_base[i].first << std::endl;
+            bumped[i].second = ccy_base[i].second + bump_size;
+        }
         tmpmkt.set_risk_factors(bumped);
         pv_up = compute_prices(pricers, tmpmkt);
 
-
-        // restore original market state for next iteration
-        // (more efficient than creating a new copy of the market at every iteration)
-        bumped[0].second = d.second;
+        // restore original market state
+        for (size_t i = 0; i < ccy_base.size(); ++i) {
+            bumped[i].second = ccy_base[i].second; // reset to original value
+        }
         tmpmkt.set_risk_factors(bumped);
-
-        // compute estimator of the derivative via central finite differences
+        //std::cout << "pv_up" << pv_up.back().first << std::endl;
         double dr = 2.0 * bump_size;
         std::transform(pv_up.begin(), pv_up.end(), pv_dn.begin(), pv01.back().second.begin()
             , [dr](double hi, double lo) -> double { return (hi - lo) / dr; });
+    
+        
     }
+
+    // // compute prices for perturbated markets and aggregate results
+    // pv01.reserve(base.size());
+    // for (const auto& d : base) {
+    //     std::vector<double> pv_up, pv_dn;
+    //     std::vector<std::pair<string, double>> bumped(1, d);
+    //     pv01.push_back(std::make_pair(d.first, std::vector<double>(pricers.size())));
+
+    //     // bump down and price
+    //     bumped[0].second = d.second - bump_size;
+    //     tmpmkt.set_risk_factors(bumped);
+    //     pv_dn = compute_prices(pricers, tmpmkt);
+
+    //     // bump up and price
+    //     bumped[0].second = d.second + bump_size; // bump up
+    //     tmpmkt.set_risk_factors(bumped);
+    //     pv_up = compute_prices(pricers, tmpmkt);
+
+
+    //     // restore original market state for next iteration
+    //     // (more efficient than creating a new copy of the market at every iteration)
+    //     bumped[0].second = d.second;
+    //     tmpmkt.set_risk_factors(bumped);
+
+    //     // compute estimator of the derivative via central finite differences
+    //     double dr = 2.0 * bump_size;
+    //     std::transform(pv_up.begin(), pv_up.end(), pv_dn.begin(), pv01.back().second.begin()
+    //         , [dr](double hi, double lo) -> double { return (hi - lo) / dr; });
+    // }
 
     return pv01;
 }
