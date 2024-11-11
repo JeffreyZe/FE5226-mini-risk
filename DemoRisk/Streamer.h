@@ -84,10 +84,48 @@ inline my_ofstream& operator<<(my_ofstream& os, const T& v)
 
 
 // when saving a double to a file in text format, use the maximum possible precision
+// re-interpreted as a 64 bits integer and use base 16 (hexadecimal)
 inline my_ofstream& operator<<(my_ofstream& os, double v)
 {
-    os.m_of << std::scientific << std::setprecision(16) << v << separator;
+    union
+    {
+        double d;
+        uint64_t u;
+    } tmp;
+    tmp.d = v;
+
+    // os.m_of << std::hex << tmp.u << separator;
+    os.m_of << std::hex << std::setfill('0') << std::setw(16) << tmp.u << separator;
+
     return os;
+}
+
+// when reading a double from a file in text format, read the hexadecimal format integer number
+// and re-interpret it as a double
+inline my_ifstream& operator>>(my_ifstream& is, double& v)
+{
+    // // read the hexadecimal string and then convert the string from hexadecimal to uint64_t
+    // string hex_string = is.read_token(); 
+    // uint64_t int_format;
+    // std::istringstream(hex_string) >> std::hex >> int_format;
+
+    std::string hex_string;
+    is >> hex_string; // read hexadecimal string from stream
+
+    // re-interpret uint64_t as a double
+    union
+    {
+        double d;
+        uint64_t u;
+    } tmp;
+
+    // convert hexadecimal string into uint64_t
+    std::istringstream hex_stream(hex_string);
+    hex_stream >> std::hex >> tmp.u;
+
+    // assign double value to v
+    v = tmp.d;
+    return is;
 }
 
 
@@ -145,10 +183,19 @@ inline my_ifstream& operator>>(my_ifstream& is, Date& v)
 {
     string tmp;
     is >> tmp;
-    unsigned y = std::atoi(tmp.substr(0, 4).c_str());
-    unsigned m = std::atoi(tmp.substr(4, 2).c_str());
-    unsigned d = std::atoi(tmp.substr(6, 2).c_str());
-    v.init(y, m, d);
+
+    if (tmp.size() == 8) // read YYYYMMDD format
+    {
+        unsigned y = std::atoi(tmp.substr(0, 4).c_str());
+        unsigned m = std::atoi(tmp.substr(4, 2).c_str());
+        unsigned d = std::atoi(tmp.substr(6, 2).c_str());
+        v.init(y, m, d);
+    }
+    else // read Serial format
+    {
+        unsigned serial = std::atoi(tmp.c_str());
+        v.init(serial);
+    }
     return is;
 }
 
