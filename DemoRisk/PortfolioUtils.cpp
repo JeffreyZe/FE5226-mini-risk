@@ -20,31 +20,10 @@ std::vector<ppricer_t> get_pricers(const portfolio_t& portfolio)
     return pricers;
 }
 
-// portfolio_values_t compute_prices(const std::vector<ppricer_t>& pricers, Market& mkt)
-// {
-//     portfolio_values_t prices(pricers.size());
-//     std::cout << "portfolio_values_t" << std::endl;
-//     for (size_t i = 0; i < pricers.size(); ++i) 
-//     {
-        
-//         // Call price and create the pair
-//         double price = pricers[i]->price(mkt);
-//         std::cout << "portfolio_values_trtt" << price << std::endl;
-//         prices[i] = std::make_pair(price, "");
-//     }
-
-//     // std::transform(pricers.begin(), pricers.end(), prices.begin()
-//     //     , [&mkt](auto& pp) -> std::pair<double, string>
-//     //      { return std::make_pair(pp->price(mkt), ""); });
-//     std::cout << "portfolio_values_t eee" << std::endl;
-//     return prices;
-// }
 portfolio_values_t compute_prices(const std::vector<ppricer_t>& pricers, Market& mkt)
 {
     portfolio_values_t prices(pricers.size());
     std::cout << "portfolio_values_t" << std::endl;
-    //pricers[0]->price(mkt);
-    std::cout << "portfolio_values_tttt" << std::endl;
     std::transform(pricers.begin(), pricers.end(), prices.begin()
         , [&mkt](auto &pp) -> double { return pp->price(mkt); });
     return prices;
@@ -55,13 +34,6 @@ portfolio_values_t compute_prices(const std::vector<ppricer_t>& pricers, Market&
 double portfolio_total(const portfolio_values_t& values)
 {
     return std::accumulate(values.begin(), values.end(), 0.0);
-    // double sum=0;
-    // for (size_t i=0; i < values.size(); i++)
-    // {
-    //     sum += values[i].first;
-    // }
-    // std::cout << sum << std::endl;
-    // return sum;
 }
 
 // std::vector<std::pair<string, portfolio_values_t>> compute_pv01(const std::vector<ppricer_t>& pricers, const Market& mkt)
@@ -144,10 +116,8 @@ std::vector<std::pair<string, portfolio_values_t>> compute_pv01_parallel(const s
         // bump down and price
         for (const auto& cb : ccy_base)
         {
-            std::cout << cb.first << std::endl;
             bumped.push_back(cb);
             bumped.back().second = cb.second - bump_size;
-            std::cout << bumped.back().second << std::endl;
         }
         tmpmkt.set_risk_factors(bumped);
         std::cout << "pv_dn start" << std::endl;
@@ -174,35 +144,6 @@ std::vector<std::pair<string, portfolio_values_t>> compute_pv01_parallel(const s
     
         
     }
-
-    // // compute prices for perturbated markets and aggregate results
-    // pv01.reserve(base.size());
-    // for (const auto& d : base) {
-    //     std::vector<double> pv_up, pv_dn;
-    //     std::vector<std::pair<string, double>> bumped(1, d);
-    //     pv01.push_back(std::make_pair(d.first, std::vector<double>(pricers.size())));
-
-    //     // bump down and price
-    //     bumped[0].second = d.second - bump_size;
-    //     tmpmkt.set_risk_factors(bumped);
-    //     pv_dn = compute_prices(pricers, tmpmkt);
-
-    //     // bump up and price
-    //     bumped[0].second = d.second + bump_size; // bump up
-    //     tmpmkt.set_risk_factors(bumped);
-    //     pv_up = compute_prices(pricers, tmpmkt);
-
-
-    //     // restore original market state for next iteration
-    //     // (more efficient than creating a new copy of the market at every iteration)
-    //     bumped[0].second = d.second;
-    //     tmpmkt.set_risk_factors(bumped);
-
-    //     // compute estimator of the derivative via central finite differences
-    //     double dr = 2.0 * bump_size;
-    //     std::transform(pv_up.begin(), pv_up.end(), pv_dn.begin(), pv01.back().second.begin()
-    //         , [dr](double hi, double lo) -> double { return (hi - lo) / dr; });
-    // }
 
     return pv01;
 }

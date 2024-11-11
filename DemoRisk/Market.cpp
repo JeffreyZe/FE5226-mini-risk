@@ -9,10 +9,15 @@ namespace minirisk {
 template <typename I, typename T>
 std::shared_ptr<const I> Market::get_curve(const string& name)
 {
+    std::cout << "get_curve start" << name << std::endl;
     ptr_curve_t& curve_ptr = m_curves[name];
+    std::cout << "curve_ptr" << name << std::endl;
     if (!curve_ptr.get())
+        std::cout << "in if " << name << std::endl;
         curve_ptr.reset(new T(this, m_today, name));
+    std::cout << "curve_ptr after " << name << std::endl;
     std::shared_ptr<const I> res = std::dynamic_pointer_cast<const I>(curve_ptr);
+    std::cout << "get_curve" << name << std::endl;
     MYASSERT(res, "Cannot cast object with name " << name << " to type " << typeid(I).name());
     return res;
 }
