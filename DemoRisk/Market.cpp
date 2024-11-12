@@ -9,15 +9,10 @@ namespace minirisk {
 template <typename I, typename T>
 std::shared_ptr<const I> Market::get_curve(const string& name)
 {
-    std::cout << "get_curve start" << name << std::endl;
     ptr_curve_t& curve_ptr = m_curves[name];
-    std::cout << "curve_ptr" << name << std::endl;
     if (!curve_ptr.get())
-        std::cout << "in if " << name << std::endl;
         curve_ptr.reset(new T(this, m_today, name));
-    std::cout << "curve_ptr after " << name << std::endl;
     std::shared_ptr<const I> res = std::dynamic_pointer_cast<const I>(curve_ptr);
-    std::cout << "get_curve" << name << std::endl;
     MYASSERT(res, "Cannot cast object with name " << name << " to type " << typeid(I).name());
     return res;
 }
@@ -70,14 +65,31 @@ unsigned Market::to_days(const string& key, const string& ccyname)
 const std::map<unsigned, double> Market::get_yield(const string& ccyname)
 {
     string expr = ir_rate_prefix + "\\d+[DWMY]." + ccyname;
-    std::vector<std::string> matched_keys = m_mds->match(expr);
-    std::map<unsigned, double> yield_curve;
+    
+    std::map<unsigned, double> yield_curve = {{0, 0.0}};
     unsigned t;
-    for (const string& key : matched_keys)
+    if (m_mds)
     {
-        t = to_days(key, ccyname);
-        yield_curve.emplace(t, t * from_mds("yield curve", key)/365.0);
+        std::vector<std::string> matched_keys = m_mds->match(expr);
+        for (const string& key : matched_keys)
+        {
+            t = to_days(key, ccyname);
+            yield_curve.emplace(t, t * from_mds("yield curve", key)/365.0);
+        }
     }
+    else
+    {
+        std::regex r(expr);
+        for (const auto& rf : m_risk_factors)
+        {
+            if (std::regex_match(rf.first, r))
+            {
+                t = to_days(rf.first, ccyname);
+                yield_curve.emplace(t, t * from_mds("yield curve", rf.first)/365.0);
+            }
+        }
+    }
+    
     return yield_curve;
 };
 

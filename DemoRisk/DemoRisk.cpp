@@ -8,7 +8,6 @@ using namespace::minirisk;
 
 void run(const string& portfolio_file, const string& risk_factors_file)
 {
-    std::cout << "Start \n";
     // load the portfolio from file
     portfolio_t portfolio = load_portfolio(portfolio_file);
     // save and reload portfolio to implicitly test round trip serialization
@@ -17,7 +16,6 @@ void run(const string& portfolio_file, const string& risk_factors_file)
     portfolio = load_portfolio("portfolio.tmp");
 
     // display portfolio
-    std::cout << "Print Portfolio: \n";
     print_portfolio(portfolio);
 
     // get pricers
@@ -57,11 +55,17 @@ void run(const string& portfolio_file, const string& risk_factors_file)
     //         print_price_vector("PV01 " + g.first, g.second);
     // }
 
-    {   // Compute PV01 Parallel (i.e. sensitivity with respect to interest rate dV/dr)
-        std::vector<std::pair<string, portfolio_values_t>> pv01(compute_pv01_parallel(pricers,mkt));  // PV01 per trade
-        std::cout << "finish PV01 \n";
+    {   // Compute PV01 Bucketed (i.e. computes risk with respect to individual yield curves)
+        std::vector<std::pair<string, portfolio_values_t>> pv01_bucketed(compute_pv01_bucketed(pricers,mkt));
+        // display PV01 per currency per tensor
+        for (const auto& g : pv01_bucketed)
+            print_price_vector("PV01 " + g.first, g.second);
+    }
+
+    {   // Compute PV01 Parallel (i.e. computes risk with respect to parallel shift of the yield curve)
+        std::vector<std::pair<string, portfolio_values_t>> pv01_parallel(compute_pv01_parallel(pricers,mkt));
         // display PV01 per currency
-        for (const auto& g : pv01)
+        for (const auto& g : pv01_parallel)
             print_price_vector("PV01 " + g.first, g.second);
     }
 }
