@@ -15,9 +15,10 @@ CC = $(COMPILER)
 $(info COMPILER: $(CC))
 
 # directories
-BINDIR:=bin
+BASE_BINDIR := bin
+BINDIR := $(BASE_BINDIR)
 ifeq ($(DEBUG),1)
-  BINDIR=$(BINDIR)-dbg
+  BINDIR := $(BASE_BINDIR)-dbg
 endif
 $(info BINDIR: $(BINDIR))
 
@@ -103,6 +104,7 @@ include $(wildcard $(DEPFILES))
 .PHONY: clean
 clean:
 	rm -rf $(BINDIR)
+	rm -rf $(BINDIR)-dbg
 
 
 # use -p for multithreading
