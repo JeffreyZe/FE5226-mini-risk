@@ -32,10 +32,65 @@ double Market::from_mds(const string& objtype, const string& name)
     return ins.first->second;
 }
 
-const double Market::get_yield(const string& ccyname)
+unsigned Market::to_days(const string& key, const string& ccyname)
 {
-    string name(ir_rate_prefix + ccyname);
-    return from_mds("yield curve", name);
+    unsigned unit=0, period=0, extra_length;
+    extra_length = ir_rate_prefix.length() + ccyname.length() + 1; // 1 is for the '.' before ccy
+    string middle_part = key.substr(ir_rate_prefix.length(), key.length()-extra_length); // keep as '10W'
+    char c = middle_part.back(); // 'W'
+    middle_part.pop_back();
+    unit = std::stoi(middle_part); // 10
+    switch (c)
+    {
+    case 'D':
+        period = 1;
+        break;
+    case 'W':
+        period = 7;
+        break;
+    case 'M':
+        period = 30;
+        break;
+    case 'Y':
+        period = 365;
+        break;
+    default:
+        MYASSERT(false, "Please input D/W/M/Y to get the yield curve.");
+        break;
+    }
+
+    return unit * period;
+}
+
+const std::map<unsigned, double> Market::get_yield(const string& ccyname)
+{
+    string expr = ir_rate_prefix + "\\d+[DWMY]." + ccyname;
+    
+    std::map<unsigned, double> yield_curve = {{0, 0.0}};
+    unsigned t;
+    if (m_mds)
+    {
+        std::vector<std::string> matched_keys = m_mds->match(expr);
+        for (const string& key : matched_keys)
+        {
+            t = to_days(key, ccyname);
+            yield_curve.emplace(t, t * from_mds("yield curve", key)/365.0);
+        }
+    }
+    else
+    {
+        std::regex r(expr);
+        for (const auto& rf : m_risk_factors)
+        {
+            if (std::regex_match(rf.first, r))
+            {
+                t = to_days(rf.first, ccyname);
+                yield_curve.emplace(t, t * from_mds("yield curve", rf.first)/365.0);
+            }
+        }
+    }
+    
+    return yield_curve;
 };
 
 const double Market::get_fx_spot(const string& name)

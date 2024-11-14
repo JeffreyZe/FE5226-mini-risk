@@ -18,6 +18,8 @@ private:
 
     double from_mds(const string& objtype, const string& name);
 
+    unsigned to_days(const string &key, const string &ccyname);
+
 public:
 
     typedef std::pair<string, double> risk_factor_t;
@@ -35,7 +37,7 @@ public:
     const ptr_disc_curve_t get_discount_curve(const string& name);
 
     // yield rate for currency name
-    const double get_yield(const string& name);
+    const std::map<unsigned, double> get_yield(const string& name);
 
     // fx exchange rate to convert 1 unit of ccy1 into USD
     const double get_fx_spot(const string& ccy);
